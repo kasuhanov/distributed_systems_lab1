@@ -13,7 +13,7 @@ import java.util.List;
 public class Server extends Thread{
     private Socket socket;
     private static List<String> users = new ArrayList<>();
-    private static List<String> rooms = new ArrayList<>();
+    private static List<ChatRoom> rooms = new ArrayList<>();
 
     public static void main(String[] args) {
         ServerSocket server = null;
@@ -50,7 +50,7 @@ public class Server extends Thread{
             DataInputStream in = new DataInputStream(sin);
             DataOutputStream out = new DataOutputStream(sout);
             JSONObject response = new JSONObject();
-            while(true) {
+            while(!socket.isClosed()) {
                 JSONObject request;
                         try {
                             request = new JSONObject(in.readUTF());
@@ -70,7 +70,19 @@ public class Server extends Thread{
                 }
                 if( request.getString("status").equals(Status.getRooms.name())){
                     response.put("status", Status.OK);
-                    response.put("rooms", rooms);
+                    response.put("rooms", getRooms());
+                }
+                if( request.getString("status").equals(Status.addRoom.name())){
+                    ChatRoom room = new ChatRoom();
+                    room.setName(request.getString("room"));
+                    if(!rooms.contains(room)){
+                        rooms.add(room);
+                        response.put("status", Status.OK);
+                        response.put("room", room.getName());
+                    } else {
+                        System.out.println("room already exists : " + request.getString("room"));
+                        response.put("status",Status.NOK);
+                    }
                 }
                 out.writeUTF(response.toString());
                 out.flush();
@@ -86,5 +98,11 @@ public class Server extends Thread{
                 e.printStackTrace();
             }
         }
+    }
+
+    public List<String> getRooms(){
+        List<String> result = new ArrayList<>();
+        rooms.forEach(chatRoom -> result.add(chatRoom.getName()));
+        return result;
     }
 }

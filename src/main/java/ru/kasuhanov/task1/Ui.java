@@ -14,6 +14,7 @@ public class Ui extends JFrame {
     private JTextField textField;
     private JComboBox comboBox;
     private JButton buttonAdd;
+    private JLabel labelRoom;
     private UiClient client;
 
     public Ui() {
@@ -31,14 +32,17 @@ public class Ui extends JFrame {
         });
     }
 
+    @SuppressWarnings("unchecked")
     private void onOK() {
         switch (client.getClientState()){
             case NOT_LOGINED:
                 if(client.onSubmitClick() == ClientState.LOGINED){
                     textField.setVisible(false);
-                    client.loadRooms();
+                    comboBox.setModel(new DefaultComboBoxModel<>( client.loadRooms()));
                     buttonAdd.setVisible(true);
                     comboBox.setVisible(true);
+                    labelRoom.setVisible(true);
+                    buttonOK.setText("Join");
                 }
                 break;
             case LOGINED:
@@ -46,11 +50,13 @@ public class Ui extends JFrame {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void onAdd(){
         JDialog dialog = new JDialog();
         String result = JOptionPane.showInputDialog(dialog, "Enter room name:");
         dialog.dispose();
         client.addRoom(result);
+        comboBox.setModel(new DefaultComboBoxModel<>( client.loadRooms()));
     }
 
     private void onCancel() {dispose();}
