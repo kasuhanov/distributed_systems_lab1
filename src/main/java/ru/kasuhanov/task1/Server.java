@@ -12,7 +12,9 @@ import java.util.List;
 
 public class Server extends Thread{
     private Socket socket;
-    private List<String> users = new ArrayList<>();
+    private static List<String> users = new ArrayList<>();
+    private static List<String> rooms = new ArrayList<>();
+
     public static void main(String[] args) {
         ServerSocket server = null;
         try {
@@ -33,12 +35,14 @@ public class Server extends Thread{
             }
         }
     }
+
     public Server(Socket socket){
         this.socket = socket;
         setDaemon(true);
         setPriority(NORM_PRIORITY);
         start();
     }
+
     public void run(){
         try{
             InputStream sin = socket.getInputStream();
@@ -57,12 +61,16 @@ public class Server extends Thread{
                 if( request.getString("status").equals(Status.selectUser.name())){
                     if(!users.contains(request.getString("user"))){
                         users.add(request.getString("user"));
-                        System.out.println("user added :" + request.getString("user"));
+                        System.out.println("user added : " + request.getString("user"));
                         response.put("status",Status.OK);
                     }else{
                         System.out.println("user already exists : " + request.getString("user"));
                         response.put("status",Status.NOK);
                     }
+                }
+                if( request.getString("status").equals(Status.getRooms.name())){
+                    response.put("status", Status.OK);
+                    response.put("rooms", rooms);
                 }
                 out.writeUTF(response.toString());
                 out.flush();
