@@ -1,22 +1,20 @@
-package ru.kasuhanov.task1;
+package ru.kasuhanov.client;
 
 import org.json.JSONObject;
 import ru.kasuhanov.util.ClientState;
 import ru.kasuhanov.util.Status;
 
-import javax.swing.*;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 
 import static ru.kasuhanov.util.ClientState.LOGINED;
 import static ru.kasuhanov.util.ClientState.NOT_LOGINED;
 
-public class UiClient extends Thread {
+public class FxClient extends Thread {
     private static String rooms = null;
-    private JTextArea textArea;
-    private JTextField textField;
     private Socket socket;
     private ClientState clientState = NOT_LOGINED;
     private DataOutputStream out;
@@ -26,9 +24,7 @@ public class UiClient extends Thread {
     private boolean open = true;
     private String user;
 
-    public UiClient(JTextArea textArea, JTextField textField){
-        this.textArea = textArea;
-        this.textField = textField;
+    public FxClient(){
         setDaemon(true);
         setPriority(NORM_PRIORITY);
         start();
@@ -38,13 +34,12 @@ public class UiClient extends Thread {
     public void run() {
         try {
             int serverPort = 6666;
-            textArea.append("client is started\n");
+            //textArea.setText("client is started\n");
             socket = new Socket(InetAddress.getLocalHost(), serverPort);
             is = socket.getInputStream();
             os = socket.getOutputStream();
             in = new DataInputStream(is);
             out = new DataOutputStream(os);
-            textArea.append("Type ur username:\n");
             while(open);
         }catch (IOException e){
             e.printStackTrace();
@@ -58,22 +53,7 @@ public class UiClient extends Thread {
         }
     }
 
-    public ClientState onSubmitClick(){
-        switch (clientState){
-            case NOT_LOGINED:
-                try {
-                    selectUsername(textField.getText());
-                    textField.setText("");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                break;
-            case LOGINED:break;
-        }
-        return clientState;
-    }
-
-    public void selectUsername(String username) throws IOException {
+    public boolean selectUsername(String username) throws IOException {
         JSONObject request = new JSONObject();
         request.put("status", Status.selectUser);
         request.put("user", username);
@@ -81,16 +61,15 @@ public class UiClient extends Thread {
         out.flush();
         JSONObject response = new JSONObject(in.readUTF());
         if(response.getString("status").equals(Status.OK.name())){
-            textArea.setText("logged in as "+username+"\n");
             user = username;
             clientState = LOGINED;
+            return true;
         }else{
-            textArea.append("This username already in use..\n");
-            textArea.append("try again..\n");
+            return false;
         }
     }
 
-    public Vector<String> loadRooms() {
+    public List<String> loadRooms() {
         try {
             JSONObject request = new JSONObject();
             request.put("status", Status.getRooms);
@@ -98,7 +77,7 @@ public class UiClient extends Thread {
             out.flush();
             JSONObject response = new JSONObject(in.readUTF());
             if(response.getString("status").equals(Status.OK.name())){
-                Vector<String> rooms = new Vector<>();
+                List<String> rooms = new ArrayList<>();
                 for (Object o: response.getJSONArray("rooms")) {
                     rooms.add((String) o);
                 }
@@ -112,7 +91,7 @@ public class UiClient extends Thread {
         return null;
     }
 
-    public void addRoom(String roomName){
+    public boolean addRoom(String roomName){
         try {
             JSONObject request = new JSONObject();
             request.put("status", Status.addRoom);
@@ -121,20 +100,19 @@ public class UiClient extends Thread {
             out.writeUTF(request.toString());
             out.flush();
             JSONObject response = new JSONObject(in.readUTF());
-            if(response.getString("status").equals(Status.OK.name())){
-                textArea.append("room "+response.getString("room")+" created\n");
-            }else{
-                textArea.append("Room with this name already exists..\n");
-                textArea.append("try again..\n");
-            }
-            // TODO: 16.03.2016 add some logic
+            return response.getString("status").equals(Status.OK.name());
         } catch (IOException e){
             e.printStackTrace();
         }
+        return false;
     }
 
     public ClientState getClientState() {
         return clientState;
+    }
+
+    public String getUser() {
+        return user;
     }
 
     @Override

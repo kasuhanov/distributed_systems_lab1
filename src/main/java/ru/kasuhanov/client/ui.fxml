@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.AnchorPane?>
+<AnchorPane fx:id="anchorPane" scaleShape="false" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="ru.kasuhanov.client.Controller">
+    <Button fx:id="okBtn" layoutX="181.0" layoutY="227.0" mnemonicParsing="false" onAction="#onOkClick" text="Ok"/>
+    <TextArea fx:id="textArea" editable="false" focusTraversable="false" layoutX="13.0" layoutY="14.0"
+              pickOnBounds="false" prefHeight="200.0" prefWidth="200.0"/>
+    <TextField fx:id="textField" layoutX="13.0" layoutY="227.0" prefHeight="25.0" prefWidth="159.0"/>
+    <Button fx:id="logBtn" layoutX="249.0" layoutY="14.0" mnemonicParsing="false" onAction="#onLogClick" text="Login"/>
+    <ComboBox fx:id="roomsBox" layoutX="217.0" layoutY="62.0" prefWidth="150.0"/>
+    <Button fx:id="addBtn" layoutX="375.0" layoutY="62.0" mnemonicParsing="false" onAction="#onAddClick" text="+"/>
+    <Button fx:id="joinBtn" layoutX="230.0" layoutY="114.0" mnemonicParsing="false" onAction="#onJoinClick"
+            text="Join"/>
+</AnchorPane>

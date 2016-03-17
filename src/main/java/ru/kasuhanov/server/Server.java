@@ -1,4 +1,4 @@
-package ru.kasuhanov.task1;
+package ru.kasuhanov.server;
 
 import org.json.JSONException;
 import org.json.JSONObject;

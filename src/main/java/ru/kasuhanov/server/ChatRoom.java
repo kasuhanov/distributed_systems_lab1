@@ -1,4 +1,4 @@
-package ru.kasuhanov.task1;
+package ru.kasuhanov.server;
 
 import java.net.Socket;
 import java.util.HashMap;
