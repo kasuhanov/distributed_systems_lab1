@@ -4,7 +4,10 @@ import org.json.JSONObject;
 import ru.kasuhanov.util.ClientState;
 import ru.kasuhanov.util.Status;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -14,16 +17,15 @@ import static ru.kasuhanov.util.ClientState.LOGINED;
 import static ru.kasuhanov.util.ClientState.NOT_LOGINED;
 
 public class FxClient extends Thread {
-    private static String rooms = null;
     private Socket socket;
     private ClientState clientState = NOT_LOGINED;
-    private DataOutputStream out;
-    private DataInputStream in;
-    private InputStream is;
-    private OutputStream os;
-    private boolean open = true;
+    private PrintWriter out;
+    private BufferedReader in;
     private String user;
-    public FxClient(){
+    private Controller controller;
+    private boolean open = true;
+    public FxClient(Controller controller){
+        this.controller = controller;
         setDaemon(true);
         setPriority(NORM_PRIORITY);
         start();
@@ -34,10 +36,41 @@ public class FxClient extends Thread {
         try {
             int serverPort = 6666;
             socket = new Socket(InetAddress.getLocalHost(), serverPort);
-            is = socket.getInputStream();
-            os = socket.getOutputStream();
-            in = new DataInputStream(is);
-            out = new DataOutputStream(os);
+            in = new BufferedReader(new InputStreamReader(
+                    socket.getInputStream()));
+            out = new PrintWriter(socket.getOutputStream(), true);
+            while (!socket.isClosed()) {
+                if(open && in.ready()){
+                    JSONObject message =  new JSONObject(in.readLine());
+                    System.out.println(message);
+                    switch (Status.valueOf(message.getString("status"))){
+                        case LOGIN_OK:
+                            clientState = LOGINED;
+                            controller.loginCallback(true);
+                            break;
+                        case LOGIN_NOK:
+                            controller.loginCallback(false);
+                            break;
+                        case ROOMS:
+                            List<String> rooms = new ArrayList<>();
+                            for (Object o: message.getJSONArray("rooms")) {
+                                rooms.add((String) o);
+                            }
+                            controller.roomsCallback(rooms);
+                            break;
+                        case ROOM_ADD_OK:
+                            controller.addRoomCallback(true);
+                            break;
+                        case ROOM_ADD_NOK:
+                            controller.addRoomCallback(false);
+                            break;
+                        case JOIN_OK:
+                            controller.joinCallback(message.getString("room"));
+                            break;
+                    }
+                }
+
+            }
         }catch (IOException e){
             e.printStackTrace();
         } finally {
@@ -50,73 +83,34 @@ public class FxClient extends Thread {
         }
     }
 
-    public boolean selectUsername(String username) throws IOException {
+    public void selectUsername(String username) throws IOException {
         JSONObject request = new JSONObject();
         request.put("status", Status.selectUser);
         request.put("user", username);
-        out.writeUTF(request.toString());
-        out.flush();
-        JSONObject response = new JSONObject(in.readUTF());
-        if(response.getString("status").equals(Status.OK.name())){
-            user = username;
-            clientState = LOGINED;
-            return true;
-        }else{
-            return false;
-        }
+        user = username;
+        out.println(request.toString());
     }
 
-    public List<String> loadRooms() {
-        try {
-            JSONObject request = new JSONObject();
-            request.put("status", Status.getRooms);
-            out.writeUTF(request.toString());
-            out.flush();
-            JSONObject response = new JSONObject(in.readUTF());
-            if(response.getString("status").equals(Status.OK.name())){
-                List<String> rooms = new ArrayList<>();
-                for (Object o: response.getJSONArray("rooms")) {
-                    rooms.add((String) o);
-                }
-                return rooms;
-            }else{
-                throw new RuntimeException("invalid server response");
-            }
-        }catch (IOException e){
-            e.printStackTrace();
-        }
-        return null;
+    public void loadRooms() {
+        JSONObject request = new JSONObject();
+        request.put("status", Status.getRooms);
+        out.println(request.toString());
     }
 
-    public boolean joinRoom(String roomName){
-        try {
-            JSONObject request = new JSONObject();
-            request.put("status", Status.joinRoom);
-            request.put("room", roomName);
-            request.put("user", user);
-            out.writeUTF(request.toString());
-            out.flush();
-            JSONObject response = new JSONObject(in.readUTF());
-            return response.getString("status").equals(Status.OK.name());
-        } catch (IOException e){
-            e.printStackTrace();
-        }
-        return false;
+    public void joinRoom(String roomName){
+        JSONObject request = new JSONObject();
+        request.put("status", Status.joinRoom);
+        request.put("room", roomName);
+        request.put("user", user);
+        out.println(request.toString());
     }
 
     public boolean addRoom(String roomName){
-        try {
-            JSONObject request = new JSONObject();
-            request.put("status", Status.addRoom);
-            request.put("room", roomName);
-            request.put("user", user);
-            out.writeUTF(request.toString());
-            out.flush();
-            JSONObject response = new JSONObject(in.readUTF());
-            return response.getString("status").equals(Status.OK.name());
-        } catch (IOException e){
-            e.printStackTrace();
-        }
+        JSONObject request = new JSONObject();
+        request.put("status", Status.addRoom);
+        request.put("room", roomName);
+        request.put("user", user);
+        out.println(request.toString());
         return false;
     }
 
@@ -133,8 +127,9 @@ public class FxClient extends Thread {
             JSONObject request = new JSONObject();
             request.put("status", Status.disconnect);
             request.put("user", user);
-            out.writeUTF(request.toString());
-            out.flush();
+            open = false;
+            out.println(request.toString());
+            in.close();
             socket.close();
         } catch (IOException e) {
             e.printStackTrace();
