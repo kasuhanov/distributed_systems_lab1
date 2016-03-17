@@ -96,6 +96,19 @@ public class Server extends Thread{
                         ChatRoom chatRoom = rooms.get(rooms.lastIndexOf(room));
                         chatRoom.getUsers().put(request.getString("user"), socket);
                         System.out.println(chatRoom);
+                        final JSONObject finalRequest2 = request;
+                        chatRoom.getUsers().forEach((u, socket1) -> {
+                            try {
+                                PrintWriter out1 = new PrintWriter(socket1.getOutputStream(), true);
+                                response.put("status", Status.MESSAGE);
+                                response.put("room", chatRoom.getName());
+                                response.put("message", "User "+ finalRequest2.getString("user")+" has joined чатик..");
+                                response.put("user", "System");
+                                out1.println(response);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        });
                         response.put("status", Status.JOIN_OK);
                         response.put("room", chatRoom.getName());
                     } else {
