@@ -54,10 +54,10 @@ public class Server extends Thread{
 
             JSONObject response = new JSONObject();
             while(!socket.isClosed()) {
+                boolean message = false;
                 JSONObject request;
                         try {
                             String resp = in.readLine();
-                            System.out.println(resp);
                             request = new JSONObject(resp);
                         } catch (JSONException e){
                             request =  new JSONObject();
@@ -103,16 +103,53 @@ public class Server extends Thread{
                         response.put("status",Status.JOIN_NOK);
                     }
                 }
+                if( request.getString("status").equals(Status.messasge.name())){
+                    message = true;
+                    ChatRoom room = new ChatRoom();
+                    room.setName(request.getString("room"));
+                    if(rooms.contains(room)){
+                        ChatRoom chatRoom = rooms.get(rooms.lastIndexOf(room));
+                        final JSONObject finalRequest1 = request;
+                        chatRoom.getUsers().forEach((u, socket1) -> {
+                            try {
+                                PrintWriter out1 = new PrintWriter(socket1.getOutputStream(), true);
+                                response.put("status", Status.MESSAGE);
+                                response.put("room", chatRoom.getName());
+                                response.put("message", finalRequest1.getString("message"));
+                                response.put("user", finalRequest1.getString("user"));
+                                out1.println(response);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        });
+                    }
+                }
                 if( request.getString("status").equals(Status.disconnect.name())){
                     if(request.has("user")){
                         final JSONObject finalRequest = request;
-                        rooms.forEach(chatRoom -> chatRoom.getUsers().remove(finalRequest.getString("user")));
+                        rooms.forEach( chatRoom -> {
+                            if(chatRoom.getUsers().containsKey(finalRequest.getString("user"))){
+                                chatRoom.getUsers().forEach((u, socket1) -> {
+                                    try {
+                                        PrintWriter out1 = new PrintWriter(socket1.getOutputStream(), true);
+                                        response.put("status", Status.MESSAGE);
+                                        response.put("room", chatRoom.getName());
+                                        response.put("message", "User "+finalRequest.getString("user")+" has left чатик..");
+                                        response.put("user", "System");
+                                        out1.println(response);
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                });
+                                chatRoom.getUsers().remove(finalRequest.getString("user"));
+                            }
+                        });
                         users.remove(request.getString("user"));
                     }
                     socket.close();
                     return;
                 }
-                out.println(response.toString());
+                if(!message)out.println(response.toString());
                 System.out.println("Waiting...");
             }
         } catch(Exception e) {

@@ -67,6 +67,9 @@ public class FxClient extends Thread {
                         case JOIN_OK:
                             controller.joinCallback(message.getString("room"));
                             break;
+                        case MESSAGE:
+                            controller.messageCallback(message.getString("message"), message.getString("user"));
+                            break;
                     }
                 }
 
@@ -81,6 +84,15 @@ public class FxClient extends Thread {
                 e.printStackTrace();
             }
         }
+    }
+
+    public void sendMessage(String message, String room){
+        JSONObject request = new JSONObject();
+        request.put("status", Status.messasge);
+        request.put("room", room);
+        request.put("user", user);
+        request.put("message", message);
+        out.println(request.toString());
     }
 
     public void selectUsername(String username) throws IOException {

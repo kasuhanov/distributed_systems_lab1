@@ -24,6 +24,7 @@ public class Controller implements Initializable{
     public Button addBtn;
     public Button joinBtn;
     private FxClient client;
+    private String room;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -75,6 +76,7 @@ public class Controller implements Initializable{
     }
 
     public void joinCallback(String room){
+        this.room = room;
         textArea.setText("joined room "+room+"\n");
         roomsBox.setDisable(true);
         addBtn.setDisable(true);
@@ -83,8 +85,13 @@ public class Controller implements Initializable{
         okBtn.setDisable(false);
     }
 
+    public void messageCallback(String message, String user){
+        textArea.appendText(user + ": " + message + "\n");
+    }
+
     public void onOkClick(ActionEvent actionEvent) {
-        //okBtn.setVisible(false);
+        client.sendMessage(textField.getText(),room);
+        textField.setText("");
     }
 
     public void onAddClick(ActionEvent actionEvent) {
