@@ -23,7 +23,6 @@ public class FxClient extends Thread {
     private OutputStream os;
     private boolean open = true;
     private String user;
-
     public FxClient(){
         setDaemon(true);
         setPriority(NORM_PRIORITY);
@@ -34,13 +33,11 @@ public class FxClient extends Thread {
     public void run() {
         try {
             int serverPort = 6666;
-            //textArea.setText("client is started\n");
             socket = new Socket(InetAddress.getLocalHost(), serverPort);
             is = socket.getInputStream();
             os = socket.getOutputStream();
             in = new DataInputStream(is);
             out = new DataOutputStream(os);
-            while(open);
         }catch (IOException e){
             e.printStackTrace();
         } finally {
@@ -91,6 +88,22 @@ public class FxClient extends Thread {
         return null;
     }
 
+    public boolean joinRoom(String roomName){
+        try {
+            JSONObject request = new JSONObject();
+            request.put("status", Status.joinRoom);
+            request.put("room", roomName);
+            request.put("user", user);
+            out.writeUTF(request.toString());
+            out.flush();
+            JSONObject response = new JSONObject(in.readUTF());
+            return response.getString("status").equals(Status.OK.name());
+        } catch (IOException e){
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public boolean addRoom(String roomName){
         try {
             JSONObject request = new JSONObject();
@@ -115,20 +128,16 @@ public class FxClient extends Thread {
         return user;
     }
 
-    @Override
-    public void finalize() throws Throwable{
-        super.finalize();
-        try{
-            System.out.println("fgsd");
-            // TODO: 16.03.2016 close socket properly
-            in.close();
-            out.close();
-            is.close();
-            os.close();
+    public void disconnect(){
+        try {
+            JSONObject request = new JSONObject();
+            request.put("status", Status.disconnect);
+            request.put("user", user);
+            out.writeUTF(request.toString());
+            out.flush();
             socket.close();
         } catch (IOException e) {
-            System.out.println("Could not close socket");
-            System.exit(-1);
+            e.printStackTrace();
         }
     }
 }

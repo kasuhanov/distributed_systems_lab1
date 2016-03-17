@@ -39,4 +39,12 @@ public class ChatRoom {
     public int hashCode() {
         return name.hashCode();
     }
+
+    @Override
+    public String toString() {
+        return "ChatRoom{" +
+                "name='" + name + '\'' +
+                ", users=" + users +
+                '}';
+    }
 }

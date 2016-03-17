@@ -16,7 +16,12 @@ public class FxApp extends Application {
 
     @Override
     public void start(Stage primaryStage) throws IOException {
-        Parent root = FXMLLoader.load(getClass().getResource("ui.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("ui.fxml"));
+        Parent root = (Parent)loader.load();
+        Controller controller = (Controller) loader.getController();
+        primaryStage.setOnCloseRequest(event -> {
+            controller.close();
+        });
         primaryStage.setTitle("Socket client");
         primaryStage.setScene(new Scene(root, 420, 300));
         primaryStage.show();

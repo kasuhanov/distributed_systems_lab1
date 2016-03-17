@@ -53,7 +53,9 @@ public class Server extends Thread{
             while(!socket.isClosed()) {
                 JSONObject request;
                         try {
-                            request = new JSONObject(in.readUTF());
+                            String resp = in.readUTF();
+                            System.out.println(resp);
+                            request = new JSONObject(resp);
                         } catch (JSONException e){
                             request =  new JSONObject();
                         }
@@ -83,6 +85,29 @@ public class Server extends Thread{
                         System.out.println("room already exists : " + request.getString("room"));
                         response.put("status",Status.NOK);
                     }
+                }
+                if( request.getString("status").equals(Status.joinRoom.name())){
+                    ChatRoom room = new ChatRoom();
+                    room.setName(request.getString("room"));
+                    if(rooms.contains(room)){
+                        ChatRoom chatRoom = rooms.get(rooms.lastIndexOf(room));
+                        chatRoom.getUsers().put(request.getString("user"), socket);
+                        System.out.println(chatRoom);
+                        response.put("status", Status.OK);
+                        response.put("room", chatRoom.getName());
+                    } else {
+                        System.out.println("room already exists : " + request.getString("room"));
+                        response.put("status",Status.NOK);
+                    }
+                }
+                if( request.getString("status").equals(Status.disconnect.name())){
+                    if(request.has("user")){
+                        final JSONObject finalRequest = request;
+                        rooms.forEach(chatRoom -> chatRoom.getUsers().remove(finalRequest.getString("user")));
+                        users.remove(request.getString("user"));
+                    }
+                    socket.close();
+                    return;
                 }
                 out.writeUTF(response.toString());
                 out.flush();
