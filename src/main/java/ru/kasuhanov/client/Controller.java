@@ -23,6 +23,8 @@ public class Controller implements Initializable{
     public ComboBox roomsBox;
     public Button addBtn;
     public Button joinBtn;
+    public Button userListBtn;
+    public Button quitBtn;
     private FxClient client;
     private String room;
 
@@ -60,6 +62,7 @@ public class Controller implements Initializable{
             joinBtn.setDisable(false);
             addBtn.setDisable(false);
             roomsBox.setDisable(false);
+            quitBtn.setVisible(false);
             textArea.appendText("logged in as "+client.getUser()+"\n");
         } else {
             textArea.appendText("failed to login. Username already in use"+"\n");
@@ -123,5 +126,13 @@ public class Controller implements Initializable{
 
     public void close(){
         client.disconnect();
+    }
+
+    public void onGetUsersClick(ActionEvent actionEvent) {
+        client.getUsers(room);
+    }
+
+    public void onQuitClick(ActionEvent actionEvent) {
+        client.quit(room);
     }
 }

@@ -16,6 +16,7 @@ import java.util.List;
 public class Server extends Thread{
     private Socket socket;
     private static List<String> users = new ArrayList<>();
+
     private static List<ChatRoom> rooms = new ArrayList<>();
 
     public static void main(String[] args) {
@@ -89,6 +90,23 @@ public class Server extends Thread{
                         response.put("status",Status.ROOM_ADD_NOK);
                     }
                 }
+                if( request.getString("status").equals(Status.getUsers.name())){
+                    ChatRoom room = new ChatRoom();
+                    room.setName(request.getString("room"));
+                    if(rooms.contains(room)){
+                        response.put("status", Status.MESSAGE);
+                        response.put("room", room.getName());
+                        ArrayList<String> list = new ArrayList<>();
+                        rooms.get(rooms.indexOf(room)).getUsers().forEach((s, socket1) -> {list.add(s);});
+                        response.put("message", list.toString());
+                        response.put("user", "System");
+                        out.println(response.toString());
+                        continue;
+                    } else {
+                        System.out.println("room doesn't exist : " + request.getString("room"));
+                        response.put("status",Status.MESSAGE);
+                    }
+                }
                 if( request.getString("status").equals(Status.joinRoom.name())){
                     ChatRoom room = new ChatRoom();
                     room.setName(request.getString("room"));
@@ -100,11 +118,12 @@ public class Server extends Thread{
                         chatRoom.getUsers().forEach((u, socket1) -> {
                             try {
                                 PrintWriter out1 = new PrintWriter(socket1.getOutputStream(), true);
-                                response.put("status", Status.MESSAGE);
-                                response.put("room", chatRoom.getName());
-                                response.put("message", "User "+ finalRequest2.getString("user")+" has joined чатик..");
-                                response.put("user", "System");
-                                out1.println(response);
+                                JSONObject res = new JSONObject();
+                                res.put("status", Status.MESSAGE);
+                                res.put("room", chatRoom.getName());
+                                res.put("message", "User "+ finalRequest2.getString("user")+" has joined чатик..");
+                                res.put("user", "System");
+                                out1.println(res);
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
@@ -126,11 +145,12 @@ public class Server extends Thread{
                         chatRoom.getUsers().forEach((u, socket1) -> {
                             try {
                                 PrintWriter out1 = new PrintWriter(socket1.getOutputStream(), true);
-                                response.put("status", Status.MESSAGE);
-                                response.put("room", chatRoom.getName());
-                                response.put("message", finalRequest1.getString("message"));
-                                response.put("user", finalRequest1.getString("user"));
-                                out1.println(response);
+                                JSONObject resp = new JSONObject();
+                                resp.put("status", Status.MESSAGE);
+                                resp.put("room", chatRoom.getName());
+                                resp.put("message", finalRequest1.getString("message"));
+                                resp.put("user", finalRequest1.getString("user"));
+                                out1.println(resp);
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
@@ -163,7 +183,7 @@ public class Server extends Thread{
                     return;
                 }
                 if(!message)out.println(response.toString());
-                System.out.println("Waiting...");
+                System.out.println("Response"+response.toString());
             }
         } catch(Exception e) {
             e.printStackTrace();

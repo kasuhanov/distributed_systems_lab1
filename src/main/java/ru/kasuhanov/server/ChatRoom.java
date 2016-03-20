@@ -8,6 +8,12 @@ public class ChatRoom {
     private Map<String,Socket> users = new HashMap<>();
     private String name;
 
+    public ChatRoom(){}
+
+    public ChatRoom(String name){
+        this.name = name;
+    }
+
     public String getName() {
         return name;
     }

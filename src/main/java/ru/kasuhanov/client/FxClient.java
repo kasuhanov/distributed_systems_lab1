@@ -126,6 +126,21 @@ public class FxClient extends Thread {
         return false;
     }
 
+    public void getUsers(String room){
+        JSONObject request = new JSONObject();
+        request.put("status", Status.getUsers);
+        request.put("room", room);
+        out.println(request.toString());
+    }
+
+    public void quit(String room){
+        JSONObject request = new JSONObject();
+        request.put("status", Status.getUsers);
+        request.put("user", user);
+        request.put("room", room);
+        out.println(request.toString());
+    }
+
     public ClientState getClientState() {
         return clientState;
     }
